@@ -22,7 +22,7 @@ if [ -z "$IDENTITY" ]; then
   exit 1
 fi
 
-LO="$BASE/dsh/node_modules/@deepseek-ai/libreoffice-kit-darwin-x64/program/LibreOfficeDev.app"
+LO="$BASE/dsh/node_modules/@deepseek-ai/libreoffice-kit-darwin-${TARGET}/program/LibreOfficeDev.app"
 cd "$BASE"
 
 if [ -d "$LO" ]; then
@@ -49,8 +49,8 @@ echo "Signing explicit launchers..."
 for f in \
   "runtime/primary-runtime/dependencies/node/bin/node" \
   "runtime/primary-runtime/dependencies/python/bin/python3.12" \
-  "dsh/node_modules/@vscode/ripgrep-darwin-x64/bin/rg" \
-  "dsh/node_modules/node-pty/prebuilds/darwin-x64/spawn-helper"; do
+  "dsh/node_modules/@vscode/ripgrep-darwin-${TARGET}/bin/rg" \
+  "dsh/node_modules/node-pty/prebuilds/darwin-${TARGET}/spawn-helper"; do
   [ -e "$f" ] && codesign --force --sign "$IDENTITY" --options runtime --timestamp \
     --entitlements "$ENTITLEMENTS" "$f"
 done
