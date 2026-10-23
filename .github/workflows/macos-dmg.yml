@@ -1,0 +1,41 @@
+name: macOS DMG
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x64
+          - runner: macos-15
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Package unsigned DMG
+        run: pnpm --filter @deepseek-ai/dsh-desktop run package:mac:${{ matrix.arch }}:unsigned
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deepseek-harness-macos-${{ matrix.arch }}
+          path: apps/desktop/.desktop-build/targets/mac-${{ matrix.arch }}/unsigned-artifacts/*.dmg
+          if-no-files-found: error
