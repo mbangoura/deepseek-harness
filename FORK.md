@@ -148,6 +148,28 @@ xcrun stapler validate /tmp/DeepSeek-Harness-mac-x64.dmg
 
 For Apple Silicon, repeat with `arm64`, `DSH_DESKTOP_TARGET_ARCH=arm64`, and `--arm64` on an Apple Silicon Mac.
 
+### Building arm64 on another Mac
+
+The bundled runtime is prepared for the build host, so an Intel Mac cannot produce arm64. Build on Apple Silicon (or in CI), copy the `.app` back, and sign it wherever the keychain identity lives:
+
+```sh
+ARCH=arm64 ./packaging/macos/sign-runtime.sh "/path/DeepSeek Harness.app"
+```
+
+`sign-runtime.sh` accepts either a prepared `.desktop-build/targets/mac-<arch>` tree or a finished `.app`. Then seal the Electron shell with `@electron/osx-sign`, ignoring the runtime trees that are already signed:
+
+```js
+signAsync({
+  app, identity, platform: 'darwin', type: 'distribution',
+  hardenedRuntime: true, preAutoEntitlements: true,
+  optionsForFile: () => ({ entitlements, hardenedRuntime: true }),
+  // Must be a single function: this patched osx-sign drops array-valued ignore.
+  ignore: file => file.includes('Contents/Resources/runtime/')
+    || file.includes('Contents/Resources/app.asar.unpacked/dsh/')
+    || file.endsWith('.pak'),
+})
+```
+
 ## Updates
 
 The app embeds an update feed. An unofficial x64 build has no matching upstream feed, so this fork uses a non-routable placeholder or disables the feed; "Check for Updates" then does nothing useful. That is intentional: an arm64 official update must not replace an x64 build. Update this fork by syncing and rebuilding instead.
