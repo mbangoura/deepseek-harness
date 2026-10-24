@@ -22,8 +22,15 @@ if [ -z "$IDENTITY" ]; then
   exit 1
 fi
 
-LO="$BASE/dsh/node_modules/@deepseek-ai/libreoffice-kit-darwin-${TARGET}/program/LibreOfficeDev.app"
-cd "$BASE"
+if [ -d "$BASE/Contents/Resources" ]; then
+  DSH="$BASE/Contents/Resources/app.asar.unpacked/dsh"
+  RUNTIME="$BASE/Contents/Resources/runtime"
+else
+  DSH="$BASE/dsh"
+  RUNTIME="$BASE/runtime"
+fi
+
+LO="$DSH/node_modules/@deepseek-ai/libreoffice-kit-darwin-${TARGET}/program/LibreOfficeDev.app"
 
 if [ -d "$LO" ]; then
   echo "Signing LibreOffice bundle..."
@@ -31,13 +38,13 @@ if [ -d "$LO" ]; then
 fi
 
 echo "Signing runtime Mach-O files..."
-find dsh runtime -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.so.*" -o -name "*.node" -o -name "*.exe" \) \
+find "$DSH" "$RUNTIME" -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.so.*" -o -name "*.node" -o -name "*.exe" \) \
   ! -path "*/LibreOfficeDev.app/*" -print0 \
   | xargs -0 -n1 -P4 -I{} codesign --force --sign "$IDENTITY" --options runtime --timestamp \
       --entitlements "$ENTITLEMENTS" "{}"
 
 echo "Signing remaining executable Mach-O files..."
-find dsh runtime -type f -perm -111 ! -path "*/LibreOfficeDev.app/*" ! -name "*.sh" -print0 \
+find "$DSH" "$RUNTIME" -type f -perm -111 ! -path "*/LibreOfficeDev.app/*" ! -name "*.sh" -print0 \
   | while IFS= read -r -d '' f; do
       if file -b "$f" 2>/dev/null | grep -q "Mach-O"; then
         codesign --force --sign "$IDENTITY" --options runtime --timestamp \
@@ -47,10 +54,10 @@ find dsh runtime -type f -perm -111 ! -path "*/LibreOfficeDev.app/*" ! -name "*.
 
 echo "Signing explicit launchers..."
 for f in \
-  "runtime/primary-runtime/dependencies/node/bin/node" \
-  "runtime/primary-runtime/dependencies/python/bin/python3.12" \
-  "dsh/node_modules/@vscode/ripgrep-darwin-${TARGET}/bin/rg" \
-  "dsh/node_modules/node-pty/prebuilds/darwin-${TARGET}/spawn-helper"; do
+  "$RUNTIME/primary-runtime/dependencies/node/bin/node" \
+  "$RUNTIME/primary-runtime/dependencies/python/bin/python3.12" \
+  "$DSH/node_modules/@vscode/ripgrep-darwin-${TARGET}/bin/rg" \
+  "$DSH/node_modules/node-pty/prebuilds/darwin-${TARGET}/spawn-helper"; do
   [ -e "$f" ] && codesign --force --sign "$IDENTITY" --options runtime --timestamp \
     --entitlements "$ENTITLEMENTS" "$f"
 done
