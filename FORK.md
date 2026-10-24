@@ -18,6 +18,24 @@ Keep your work on `macos-builds` and pull upstream changes regularly:
 
 That command fetches `upstream`, rebases `macos-builds` onto `upstream/master`, and pushes with `--force-with-lease`. You can also use GitHub's **Sync fork** button for `master`; the build branch still needs the rebase.
 
+## Public fork vs private mirror
+
+A GitHub fork of a public repository inherits that repository's visibility; GitHub does not allow making a fork private. If your modifications must stay private, use a private repository that shares history with upstream instead of a fork:
+
+```sh
+gh repo create mbangoura/deepseek-harness-private --private
+git remote add private https://github.com/mbangoura/deepseek-harness-private.git
+git push private master
+git push private macos-builds
+git remote set-url origin https://github.com/mbangoura/deepseek-harness-private.git
+```
+
+Keep the existing `upstream` remote and use `sync-upstream.sh` exactly as above. The trade-offs:
+
+- There is no **Sync fork** button; the script is the sync mechanism.
+- Actions minutes are billed on private repositories; public repositories get free hosted runner minutes.
+- You can still contribute fixes upstream by pushing a branch to a temporary public fork.
+
 Guidelines that keep syncs cheap:
 
 - Add fork behavior in new files (`packaging/macos/`, `.github/workflows/macos-dmg.yml`).
