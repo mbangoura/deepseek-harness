@@ -20,8 +20,8 @@ fi
 
 node -e '
   const [major, minor] = process.versions.node.split(".").map(Number)
-  if (major < 22 || (major === 22 && minor < 19)) {
-    console.error(`Node.js ${process.versions.node} is too old; use 22.19+ or 24+.`)
+  if (major < 24 || (major === 24 && minor < 9)) {
+    console.error(`Node.js ${process.versions.node} is too old; use 24.9+ or newer.`)
     process.exit(1)
   }
 '
