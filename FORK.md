@@ -45,7 +45,7 @@ Guidelines that keep syncs cheap:
 
 ## Build locally
 
-Requirements: macOS, Xcode command line tools, Node.js 22.19+ or 24+, and the repo-pinned pnpm (`corepack enable`).
+Requirements: macOS, Xcode command line tools, Node.js 24.9+ (upstream's current floor), and the repo-pinned pnpm (`corepack enable`).
 
 ```sh
 ./packaging/macos/build.sh          # host architecture, unsigned DMG
