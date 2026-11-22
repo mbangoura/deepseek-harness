@@ -19,9 +19,12 @@ if [ "$TARGET" = arm64 ] && [ "$HOST_ARCH" != arm64 ]; then
 fi
 
 node -e '
-  const [major, minor] = process.versions.node.split(".").map(Number)
-  if (major < 24 || (major === 24 && minor < 9)) {
-    console.error(`Node.js ${process.versions.node} is too old; use 24.9+ or newer.`)
+  const [major, minor, patch] = process.versions.node.split(".").map(Number)
+  const supported = major >= 26
+    ? (major > 26 || minor > 13 || (minor === 13 && patch >= 1))
+    : (major === 24 && (minor > 22 || (minor === 22 && patch >= 3)))
+  if (!supported) {
+    console.error(`Node.js ${process.versions.node} is unsupported; use 24.22.3+ or 26.13.1+.`)
     process.exit(1)
   }
 '
