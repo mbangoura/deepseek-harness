@@ -72,6 +72,23 @@ Read-only table of requested spec, installed version, bundle status, pin status,
 
 `.github/workflows/upstream-sync.yml` runs daily and on demand. It compares the local and upstream `package.json` versions and opens or updates an issue with the release-notes link and a review checklist. It never rebases or merges automatically.
 
+## Health report
+
+```sh
+node packaging/fork/health-report.mjs --profile desktop
+node packaging/fork/health-report.mjs --profile desktop --json --strict
+```
+
+Offline checks for missing packages, version drift, unpinned specs, missing lockfile/patch, bundle declarations, and the latest fork snapshot. It does not start the Host, so load-time plugin failures are not visible.
+
+## Plugin template
+
+`packaging/fork/plugin-template/` is a copyable scaffold with a `dsh.bundle` manifest, patch, TypeScript entry and package tests. It is outside the pnpm workspace on purpose; see its README for the rename/build/audit/install sequence.
+
+## Default policy
+
+`packaging/fork/defaults/` documents the no-third-party-plugins default and the review/allowlist flow. Start from `allowlist.example.json`; an approval is bound to an exact version and content hash.
+
 ## Tests
 
 ```sh
