@@ -49,7 +49,28 @@ node packaging/fork/check-parity.mjs \
   --arm64-app "/path/DeepSeek Harness.app"
 ```
 
-Compares version, dsh version, plugin bundles, and normalized file lists; checks the main executable architecture. `--skip-arch` is for fixtures only.
+Compares version, dsh version, plugin bundles, and normalized file lists; checks the main executable architecture. It reads `app.asar` directly and normalizes architecture tokens and build-hashed JS chunk names. `--skip-arch` is for fixtures only.
+
+## Exact-version policy
+
+```sh
+node packaging/fork/check-pins.mjs --profile desktop
+node packaging/fork/check-pins.mjs --profile desktop --json --strict
+```
+
+Fails on ranges, tags, floating Git refs, and remote tarballs. Git specs must pin a full 40-character commit. Local `file:`/`link:` paths are allowed. Wire this into a profile review before shipping.
+
+## Trust report
+
+```sh
+node packaging/fork/trust-report.mjs --profile desktop --allowlist packaging/fork/allowlist.json
+```
+
+Read-only table of requested spec, installed version, bundle status, pin status, allowlist status, and install time. `--strict` exits non-zero if anything is unpinned or not allowlisted. The UI panel is a later phase; this is the data layer it will call.
+
+## Upstream sync
+
+`.github/workflows/upstream-sync.yml` runs daily and on demand. It compares the local and upstream `package.json` versions and opens or updates an issue with the release-notes link and a review checklist. It never rebases or merges automatically.
 
 ## Tests
 
