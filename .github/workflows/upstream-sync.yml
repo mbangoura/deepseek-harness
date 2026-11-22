@@ -1,0 +1,62 @@
+name: Upstream sync check
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git
+          git fetch upstream --tags
+      - name: Compare versions
+        id: compare
+        run: |
+          local="$(jq -r .version package.json)"
+          upstream="$(git show upstream/master:package.json | jq -r .version)"
+          echo "local=$local" >> "$GITHUB_OUTPUT"
+          echo "upstream=$upstream" >> "$GITHUB_OUTPUT"
+          if [ "$local" != "$upstream" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open or update an issue
+        if: steps.compare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOCAL: ${{ steps.compare.outputs.local }}
+          UPSTREAM: ${{ steps.compare.outputs.upstream }}
+        run: |
+          title="Upstream ${UPSTREAM} available"
+          body="$(printf '%s\n' \
+            "Upstream \`${UPSTREAM}\` is newer than the fork's \`${LOCAL}\`." \
+            "" \
+            "Compare: https://github.com/deepseek-ai/deepseek-harness/compare/dsh-v${LOCAL}...dsh-v${UPSTREAM}" \
+            "Release notes: https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v${UPSTREAM}" \
+            "" \
+            "Checklist:" \
+            "- [ ] Review release notes and breaking changes" \
+            "- [ ] Rebase \`macos-builds\` onto \`upstream/master\`" \
+            "- [ ] Run \`pnpm install --frozen-lockfile\`" \
+            "- [ ] Build x64 on Intel and arm64 on Apple Silicon (or CI)" \
+            "- [ ] Sign, notarize, staple, verify with \`spctl\` and \`stapler\`" \
+            "- [ ] Install and smoke-test both architectures" \
+            "- [ ] Update \`ENHANCEMENT-PROPOSALS.md\` if plugin APIs changed")"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$title in:title" --json number --jq '.[0].number')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          fi
